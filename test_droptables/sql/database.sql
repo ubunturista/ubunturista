@@ -1,5 +1,5 @@
 CREATE DATABASE targetdb;
-CREATE USER targetuser@localhost IDENTIFIED BY 'UnSuperPassword1234';
+CREATE USER targetuser@'%' IDENTIFIED BY 'UnSuperPassword1234';
 
 GRANT ALL PRIVILEGES ON targetdb.* TO targetuser@'%';
 FLUSH PRIVILEGES;
