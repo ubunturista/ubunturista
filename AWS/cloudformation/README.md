@@ -1,6 +1,6 @@
-* vpc_apache_bastion.json 
+# vpc_apache_bastion.json 
 
-Crea un VPC con una red /22. Se crean 4 redes en us-east-1. Dos de las redes son públicas y se encuentran en us-east-1a y us-east-1b. Las otras dos redes son privadas y se encuentran en las dos mismas zonas de disponibilidad.
+Crea un VPC con una red /22. Se crean 4 redes en **us-east-1**. Dos de las redes son públicas y se encuentran en **us-east-1a** y **us-east-1b**. Las otras dos redes son privadas y se encuentran en las dos mismas zonas de disponibilidad.
 
 Se crea un NAT Gateway, un Internet Gateway y se aprovisiona una dirección IP.
 
