@@ -132,47 +132,6 @@
                 ]
             }
         },
-        "NATGateway": {
-            "Type": "AWS::EC2::NatGateway",
-            "Properties": {
-                "AllocationId": {
-                    "Fn::GetAtt": [
-                        "NATGatewayEIP",
-                        "AllocationId"
-                    ]
-                },
-                "SubnetId": {
-                    "Ref": "Public1"
-                },
-                "Tags": [
-                    {
-                        "Key": "Entorno",
-                        "Value": "Training"
-                    }
-                ]
-            }
-        },
-        "NATGatewayEIP": {
-            "Type": "AWS::EC2::EIP",
-            "Properties": {
-                "Domain": "vpc"
-            }
-        },
-        "RouteNATGateway": {
-            "DependsOn": [
-                "NATGateway"
-            ],
-            "Type": "AWS::EC2::Route",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
-                },
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "NatGatewayId": {
-                    "Ref": "NATGateway"
-                }
-            }
-        },
         "Private1PrivateRouteTable": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
@@ -246,7 +205,7 @@
                 }
             }
         },
-        "BastionSG": {
+        "PublicVM": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Grup de seguretat del servidor",
@@ -267,6 +226,13 @@
                         "ToPort": 22,
                         "IpProtocol": "tcp",
                         "Description": "Acceso SSH desde qualquier sitio"
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "IpProtocol": "tcp",
+                        "Description": "Acceso HTTP desde qualquier direccion IP"
                     }
                 ],
                 "Tags": [
@@ -280,38 +246,74 @@
                 }
             }
         },
-        "WEBSG": {
+        "SGEFS": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Grupo de seguridad del ALB - Balanceador de carga de aplicacions",
-                "GroupName": "SG_ALB",
-                "SecurityGroupEgress": [
-                    {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": 1,
-                        "ToPort": 65535,
-                        "IpProtocol": "-1",
-                        "Description": "Acceso a internet"
-                    }
-                ],
+                "GroupDescription": "Grup de seguretat del servei EFS",
+                "GroupName": "SG_EFS",
                 "SecurityGroupIngress": [
                     {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": 80,
-                        "ToPort": 80,
+                        "SourceSecurityGroupId" : {
+                            "Ref" : "PublicVM"
+                        },
+                        "FromPort": 2049,
+                        "ToPort": 2049,
                         "IpProtocol": "tcp",
-                        "Description": "Acceso HTTP desde qualquier direccion IP"
+                        "Description": "Acceso a EFS desde maquinas con security group PublicVM"
                     }
                 ],
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Balanceador ALB"
+                        "Value": "Servei EFS SSH"
                     }
                 ],
                 "VpcId": {
                     "Ref": "myVPC"
                 }
+            }
+        },
+        "NetworkShare" : {
+            "Type" : "AWS::EFS::FileSystem",
+            "Properties" : {
+                "FileSystemTags": [
+                    {
+                        "Key": "Name",
+                        "Value": "WebFileSystem"
+                    }
+                ]
+            }
+        },
+        "MountTargetResource1": {
+            "Type": "AWS::EFS::MountTarget",
+            "Properties": {
+                "FileSystemId": {
+                    "Ref": "NetworkShare"
+                },
+                "SubnetId": {
+                    "Ref": "Public1"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref" : "SGEFS"
+                    }
+                ]
+            }
+        },
+        "MountTargetResource2": {
+            "Type": "AWS::EFS::MountTarget",
+            "Properties": {
+                "FileSystemId": {
+                    "Ref": "NetworkShare"
+                },
+                "SubnetId": {
+                    "Ref": "Public2"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref" : "SGEFS"
+                    }
+                ]
             }
         },
         "BastionHost": {
@@ -333,7 +335,7 @@
                         "DeviceIndex": "0",
                         "GroupSet": [
                             {
-                                "Ref": "BastionSG"
+                                "Ref": "PublicVM"
                             }
                         ],
                         "SubnetId": {
@@ -354,60 +356,6 @@
                     {
                         "Key": "Name",
                         "Value": "Servidor SSH"
-                    },
-                    {
-                        "Key": "Entorno",
-                        "Value": "Training"
-                    },
-                    {
-                        "Key": "Organization",
-                        "Value": "Ubunturista"
-                    }
-                ],
-                "UserData": ""
-            }
-        },
-        "Webserver": {
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "AvailabilityZone": "us-east-1a",
-                "ImageId": {
-                    "Ref": "UbuntuAMI"
-                },
-                "InstanceType": "t3.micro",
-                "KeyName": {
-                    "Ref": "ClaveSSH"
-                },
-                "NetworkInterfaces": [
-                    {
-                        "AssociatePublicIpAddress": "False",
-                        "DeviceIndex": "0",
-                        "GroupSet": [
-                            {
-                                "Ref": "BastionSG"
-                            },
-                            {
-                                "Ref": "WEBSG"
-                            }
-                        ],
-                        "SubnetId": {
-                            "Ref": "Private1"
-                        }
-                    }
-                ],
-                "BlockDeviceMappings": [
-                    {
-                        "DeviceName": "/dev/sda1",
-                        "Ebs": {
-                            "VolumeType": "gp3",
-                            "VolumeSize": "25"
-                        }
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Servidor Web"
                     },
                     {
                         "Key": "Entorno",
@@ -443,14 +391,13 @@
                                 "sleep 30\n",
                                 "apt update\n",
                                 "sleep 30\n",
-                                "apt install -y apache2 php libapache2-mod-php php php-mysql php-gd php-mbstring unzip mysql-server mysql-client\n",
+                                "apt install -y apache2 php libapache2-mod-php php php-mysql php-gd php-mbstring unzip mariadb-server mariadb-client nfs-common\n",
                                 "sleep 10\n",
                                 "a2enmod rewrite\n",
-                                "a2enmod remoteip\n",
-                                "a2enmod headers\n",
                                 "rm /var/www/html/index.html\n",
-                                "sed s'/%h/%{X-Forwarded-For}/' /etc/apache2/apache2.conf\n",
                                 "cd /tmp\n",
+                                "wget https://es.wordpress.org/latest-es_ES.tar.gz\n",
+                                "tar xvfz /tmp/latest-es_ES.tar.gz -C /var/www/html --strip-components=1\n",
                                 "chown www-data.www-data /var/www/html -fR\n",
                                 "systemctl restart apache2\n",
                                 "--//--\n"
@@ -458,83 +405,6 @@
                         ]
                     }
                 }
-            }
-        },
-        "WebApplicationLoadBalancer": {
-            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
-            "Properties": {
-                "Type": "application",
-                "IpAddressType": "ipv4",
-                "Name": "balancejador-web",
-                "Scheme": "internet-facing",
-                "Subnets": [
-                    {
-                        "Ref": "Public1"
-                    },
-                    {
-                        "Ref": "Public2"
-                    }
-                ],
-                "SecurityGroups": [
-                    {
-                        "Ref": "WEBSG"
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Balanceador de carga ALB"
-                    }
-                ]
-            }
-        },
-        "ALBListenerHTTP": {
-            "Type": "AWS::ElasticLoadBalancingV2::Listener",
-            "Properties": {
-                "LoadBalancerArn": {
-                    "Ref": "WebApplicationLoadBalancer"
-                },
-                "DefaultActions": [
-                    {
-                        "Type": "forward",
-                        "TargetGroupArn": {
-                            "Ref": "WebServersTargetGroup"
-                        }
-                    }
-                ],
-                "Port": 80,
-                "Protocol": "HTTP"
-            }
-        },
-        "WebServersTargetGroup": {
-            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
-            "Properties": {
-                "HealthCheckPath": "/",
-                "HealthCheckPort": "80",
-                "HealthCheckProtocol": "HTTP",
-                "HealthCheckTimeoutSeconds": 10,
-                "IpAddressType": "ipv4",
-                "Name": "WebServersTargetGroup",
-                "Port": 80,
-                "Protocol": "HTTP",
-                "TargetType": "instance",
-                "Targets": [
-                    {
-                        "Id": {
-                            "Ref": "Webserver"
-                        },
-                        "Port": "80"
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "myVPC"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Grupo de destino de webservers"
-                    }
-                ]
             }
         }
     }

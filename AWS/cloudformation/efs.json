@@ -1,0 +1,36 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation",
+    "Parameters": {
+
+    },
+    "Resources" : {
+        "NetworkShare" : {
+            "Type" : "AWS::EFS::FileSystem",
+            "Properties" : {
+                "FileSystemTags": [
+                    {
+                        "Key": "Name",
+                        "Value": "WebFileSystem"
+                    }
+                ]
+            }
+        },
+        "MountTargetResource1": {
+            "Type": "AWS::EFS::MountTarget",
+            "Properties": {
+                "FileSystemId": {
+                    "Ref": "NetworkShare"
+                },
+                "SubnetId": "subnet-0ed0ad53be7edf348",
+                "SecurityGroups": [
+                            "sg-056e2ceef15da66f8"
+                        ]
+                }
+        }
+    }
+}
+
+
+
+
