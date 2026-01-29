@@ -272,7 +272,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Servidor SSH"
+                        "Value": "Training Servidor SSH"
                     }
                 ],
                 "VpcId": {
@@ -284,7 +284,7 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Grupo de seguridad del ALB - Balanceador de carga de aplicacions",
-                "GroupName": "SG_ALB",
+                "GroupName": "Trainint_SG_ALB",
                 "SecurityGroupEgress": [
                     {
                         "CidrIp": "0.0.0.0/0",
@@ -306,7 +306,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Balanceador ALB"
+                        "Value": "Training Balanceador ALB"
                     }
                 ],
                 "VpcId": {
@@ -353,7 +353,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Servidor SSH"
+                        "Value": "Otro Servidor SSH"
                     },
                     {
                         "Key": "Entorno",
@@ -407,7 +407,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Servidor Web"
+                        "Value": "Training Servidor Web"
                     },
                     {
                         "Key": "Entorno",
@@ -452,7 +452,7 @@
             "Properties": {
                 "Type": "application",
                 "IpAddressType": "ipv4",
-                "Name": "balancejador-web",
+                "Name": "training-balancejador-web",
                 "Scheme": "internet-facing",
                 "Subnets": [
                     {
@@ -470,7 +470,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Balanceador de carga ALB"
+                        "Value": "Training Balanceador de carga ALB"
                     }
                 ]
             }
@@ -519,7 +519,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Grupo de destino de webservers"
+                        "Value": "Training Grupo de destino de webservers"
                     }
                 ]
             }
