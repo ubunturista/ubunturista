@@ -1,0 +1,528 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "UbuntuAMI": {
+            "Type": "String",
+            "Default": "ami-0c7217cdde317cfec",
+            "Description": "Ubuntu 22.04 LTS 64 Bits x86"
+        },
+        "ClaveSSH": {
+            "Type": "String",
+            "Default": "Ubunturista",
+            "Description": "Clave SSH"
+        },
+        "PublicIp": {
+            "Type": "String",
+            "Default": "True",
+            "Description": "Utiliza IP publica"
+        }
+    },
+    "Resources": {
+        "AWSVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "192.168.100.0/22",
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingPublic1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "CidrBlock": "192.168.100.0/24",
+                "AvailabilityZone": "us-east-1a",
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingPublic2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "CidrBlock": "192.168.101.0/24",
+                "AvailabilityZone": "us-east-1b",
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingPrivate1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "CidrBlock": "192.168.102.0/24",
+                "AvailabilityZone": "us-east-1a",
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingPrivate2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "CidrBlock": "192.168.103.0/24",
+                "AvailabilityZone": "us-east-1b",
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingmyInternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "stack",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingAttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "TrainingmyInternetGateway"
+                }
+            }
+        },
+        "TrainingPrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingNATGateway": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "TrainingNATGatewayEIP",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "TrainingPublic1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingNATGatewayEIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "TrainingRouteNATGateway": {
+            "DependsOn": [
+                "TrainingNATGateway"
+            ],
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "TrainingPrivateRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "TrainingNATGateway"
+                }
+            }
+        },
+        "TrainingPrivate1PrivateRouteTable": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "TrainingPrivate1"
+                },
+                "RouteTableId": {
+                    "Ref": "TrainingPrivateRouteTable"
+                }
+            }
+        },
+        "TrainingPrivate2PrivateRouteTable": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "TrainingPrivate2"
+                },
+                "RouteTableId": {
+                    "Ref": "TrainingPrivateRouteTable"
+                }
+            }
+        },
+        "TrainingPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    }
+                ]
+            }
+        },
+        "TrainingPublic1PublicRouteTable": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "TrainingPublic1"
+                },
+                "RouteTableId": {
+                    "Ref": "TrainingPublicRouteTable"
+                }
+            }
+        },
+        "TrainingPublic2PublicRouteTable": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "TrainingPublic2"
+                },
+                "RouteTableId": {
+                    "Ref": "TrainingPublicRouteTable"
+                }
+            }
+        },
+        "TrainingRouteInternetGateway": {
+            "DependsOn": [
+                "TrainingmyInternetGateway"
+            ],
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "TrainingPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "TrainingmyInternetGateway"
+                }
+            }
+        },
+        "TrainingBastionSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Grup de seguretat del servidor",
+                "GroupName": "SG_Bastion_Host",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 1,
+                        "ToPort": 65535,
+                        "IpProtocol": "-1",
+                        "Description": "Acceso a internet"
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "IpProtocol": "tcp",
+                        "Description": "Acceso SSH desde qualquier sitio"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Servidor SSH"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                }
+            }
+        },
+        "TrainingWEBSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Grupo de seguridad del ALB - Balanceador de carga de aplicacions",
+                "GroupName": "SG_ALB",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 1,
+                        "ToPort": 65535,
+                        "IpProtocol": "-1",
+                        "Description": "Acceso a internet"
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "IpProtocol": "tcp",
+                        "Description": "Acceso HTTP desde qualquier direccion IP"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Balanceador ALB"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                }
+            }
+        },
+        "TrainingBastionHost": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "AvailabilityZone": "us-east-1a",
+                "ImageId": {
+                    "Ref": "UbuntuAMI"
+                },
+                "InstanceType": "t3.micro",
+                "KeyName": {
+                    "Ref": "ClaveSSH"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": {
+                            "Ref": "PublicIp"
+                        },
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "TrainingBastionSG"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "TrainingPublic1"
+                        }
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeType": "gp2",
+                            "VolumeSize": "25"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Servidor SSH"
+                    },
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    },
+                    {
+                        "Key": "Organization",
+                        "Value": "Ubunturista"
+                    }
+                ],
+                "UserData": ""
+            }
+        },
+        "TrainingWebserver": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "AvailabilityZone": "us-east-1a",
+                "ImageId": {
+                    "Ref": "UbuntuAMI"
+                },
+                "InstanceType": "t3.micro",
+                "KeyName": {
+                    "Ref": "ClaveSSH"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "False",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "TrainingBastionSG"
+                            },
+                            {
+                                "Ref": "TrainingWEBSG"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "TrainingPrivate1"
+                        }
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeType": "gp3",
+                            "VolumeSize": "25"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Servidor Web"
+                    },
+                    {
+                        "Key": "Entorno",
+                        "Value": "Training"
+                    },
+                    {
+                        "Key": "Organization",
+                        "Value": "Ubunturista"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "Content-Type: multipart/mixed; boundary=\"//\"\n",
+                                "MIME-Version: 1.0\n\n",
+                                "--//\n",
+                                "Content-Type: text/cloud-config; charset=\"us-ascii\"\n",
+                                "MIME-Version: 1.0\n",
+                                "Content-Transfer-Encoding: 7bit\n",
+                                "Content-Disposition: attachment; filename=\"cloud-config.txt\"\n\n",
+                                "#cloud-config\n",
+                                "conf: \"APT { Get { Assume-Yes 'true'; Fix-Broken 'true'; } }\"\n\n",
+                                "timezone: Europe/Madrid\n\n",
+                                "no_ssh_fingerprints: false\n\n",
+                                "--//\n",
+                                "Content-Type: text/x-shellscript; charset=\"us-ascii\"\n",
+                                "MIME-Version: 1.0\n",
+                                "Content-Transfer-Encoding: 7bit\n",
+                                "Content-Disposition: attachment; filename=\"userdata.txt\"\n\n",
+                                "#!/bin/bash\n",
+                                "--//--\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "TrainingWebApplicationLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Type": "application",
+                "IpAddressType": "ipv4",
+                "Name": "balancejador-web",
+                "Scheme": "internet-facing",
+                "Subnets": [
+                    {
+                        "Ref": "TrainingPublic1"
+                    },
+                    {
+                        "Ref": "TrainingPublic2"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "TrainingWEBSG"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Balanceador de carga ALB"
+                    }
+                ]
+            }
+        },
+        "TrainingALBListenerHTTP": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "LoadBalancerArn": {
+                    "Ref": "TrainingWebApplicationLoadBalancer"
+                },
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "TrainingWebServersTargetGroup"
+                        }
+                    }
+                ],
+                "Port": 80,
+                "Protocol": "HTTP"
+            }
+        },
+        "TrainingWebServersTargetGroup": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "HealthCheckPath": "/",
+                "HealthCheckPort": "80",
+                "HealthCheckProtocol": "HTTP",
+                "HealthCheckTimeoutSeconds": 10,
+                "IpAddressType": "ipv4",
+                "Name": "TrainingWebServersTargetGroup",
+                "Port": 80,
+                "Protocol": "HTTP",
+                "TargetType": "instance",
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "TrainingWebserver"
+                        },
+                        "Port": "80"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "AWSVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Grupo de destino de webservers"
+                    }
+                ]
+            }
+        }
+    }
+}
